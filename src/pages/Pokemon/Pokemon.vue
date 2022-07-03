@@ -113,7 +113,7 @@
             <tr v-for="encounter in filterEncounters(area.encounters)" v-bind:key="encounter.id" style="height:3rem;">
               <td class="regionData" scope="row">
                 <img :src=encounter.pokemon.icon :alt=encounter.pokemon.name class="pokeIcon">
-                {{ pokeAlias(encounter.pokemon.name) | capitalize }}<br v-if="encounter.pokemon.type!=''">
+                {{ pokeAlias(encounter.pokemon.name) | capitalize }} <a @click="toggleCaught(encounter.pokemon)"> <img :src=pokeCaughtImageAlias(encounter.pokemon.caught) /> </a><br v-if="encounter.pokemon.type!=''">
                 <small v-if="encounter.pokemon.type!=''">{{ pokeAlias(encounter.pokemon.type) | capitalize }}</small>
               </td>
               <td class="inTableTable">
@@ -183,7 +183,7 @@
 import $ from 'jquery'
 import { SetUpHighlighter, DrawNormal, ToggleAll, SelectArea, DrawSearch } from '../../assets/js/simplysMapHighlighter'
 import { Pokedex } from 'pokeapi-js-wrapper'
-import { FetchEncounters, GetEncountersForLocation, GetPokeList, FindPokemon } from './PokemonParser'
+import { FetchEncounters, GetEncountersForLocation, GetPokeList, FindPokemon, checkPokedex } from './PokemonParser'
 
 export default {
   name: 'Pokemon',
@@ -247,6 +247,7 @@ export default {
       var r = [];
       for (var i = 0; i < encounters.length; i++) {
         if (this.intersects(encounters[i].games, this.filteredGames)) {
+          encounters[i].pokemon.caught = this.checkPokedex(encounters[i].pokemon.name);
           r.push(encounters[i]);
         }
       }
@@ -291,6 +292,24 @@ export default {
       }
 
       return value;
+    },
+    toggleCaught: function(pokemon) {
+      const generation = this.mapJSON.generation;
+      const dexesJson = localStorage.getItem('pokedexes');
+      pokemon.caught = !checkPokedex(pokemon.name);
+
+      try {
+        const dexes = JSON.parse(dexesJson) || {};
+        const dex = dexes[generation] || {};
+        dex[pokemon.name] = {caught: pokemon.caught};
+        dexes[generation] = dex;
+        localStorage.setItem("pokedexes", JSON.stringify(dexes))
+      } catch(e) {
+        console.error(e);
+      }
+    },
+    pokeCaughtImageAlias: function(value){
+      return value ? require("@/assets/poke-ball.png") : require("@/assets/poke-ball-grey.png");
     },
     baseClick: function() {
       if (this.mapJSON.baseLocation.length > 0) {

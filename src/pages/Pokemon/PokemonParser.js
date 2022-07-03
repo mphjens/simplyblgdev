@@ -71,10 +71,11 @@ function GetEncounters(areaJSON) {
         var details = GetVersionDetails(encounter);
         details.forEach(function (detail) {
             r.push({
-                "pokemon":{
-                    "name":encounter.pokemon.name,
-                    "type":"",
-                    "icon":GetIcon(encounter.pokemon.name)
+                "pokemon": {
+                    "name": encounter.pokemon.name,
+                    "caught": checkPokedex(encounter.pokemon.name),
+                    "type": "",
+                    "icon": GetIcon(encounter.pokemon.name)
                 },
                 "method":detail.method,
                 "min_level":detail.min_level,
@@ -95,6 +96,31 @@ function GetEncounters(areaJSON) {
     }
 
     return collapsed;
+}
+
+function checkPokedex(name) {
+    console.log("Checking pokedex for " + name);
+    const dexesJson = localStorage.getItem("pokedexes");
+    console.log("Pokedexes: " + dexesJson);
+    if (!dexesJson) {
+        localStorage.setItem("pokedexes", JSON.stringify({}));
+    }
+    try {
+        const dexes = JSON.parse(dexesJson);
+        if (dexes[generation]) {
+            const dex = dexes[generation];
+            if(dex[name]) {
+                return !!dex[name].caught;
+            }
+        } else {
+            dexes[generation] = {}
+            localStorage.setItem("pokedexes", JSON.stringify(dexes));
+        }
+    } catch (e) {
+        return false;
+    }
+
+    return false;
 }
 
 function GetVersionDetails(encounterJSON) {
@@ -338,4 +364,4 @@ function FindPokemon(poke) {
     return resultsIds;
 }
 
-export { FetchEncounters, GetEncountersForLocation, GetPokeList, FindPokemon }
+export { FetchEncounters, GetEncountersForLocation, GetPokeList, FindPokemon, checkPokedex }
